@@ -5,12 +5,13 @@ Git e GitHub.
 
 ## Objetivo
 
-Personalizar a página `about.html` e controlar a mudança utilizando:
+Containerizar a aplicação `About Me` e controlar a mudança utilizando:
 - branch;
 - commits;
 - push;
 - Pull Request;
 - merge;
+- publicação de imagem no Docker Hub;
 - tag.
 
 ## Como executar
@@ -24,8 +25,15 @@ A aplicação não requer instalação de dependências.
 ## Como executar via Docker (US-105)
 
 ```bash
-docker build -t about-me-git-lab .
-docker run -d -p 8080:80 about-me-git-lab
+docker build -t about-me-container-felipe-vieira:latest .
+docker run -d -p 8080:80 --name about-me-container about-me-container-felipe-vieira:latest
 ```
 
 Acesse `http://localhost:8080/about.html` no navegador.
+
+## Publicação no Docker Hub
+
+```bash
+docker tag about-me-container-felipe-vieira:latest DOCKERHUB_USERNAME/about-me-container-felipe-vieira:latest
+docker push DOCKERHUB_USERNAME/about-me-container-felipe-vieira:latest
+```
