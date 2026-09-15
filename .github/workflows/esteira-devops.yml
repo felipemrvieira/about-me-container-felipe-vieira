@@ -15,6 +15,9 @@ on:
     branches: [ "main" ]
   workflow_dispatch:
 
+env:
+  IMAGE_NAME: about-me-container-felipe-vieira
+
 jobs:
   build:
     name: Build
@@ -31,12 +34,12 @@ jobs:
         with:
           context: .
           push: false
-          tags: about-me-container:ci
+          tags: ${{ env.IMAGE_NAME }}:ci
           load: true
 
       - name: Confirmar imagem gerada
         run: |
-          docker images about-me-container
+          docker images ${{ env.IMAGE_NAME }}
           echo ">> Build concluído."
           echo ">> Relaciona-se à teoria: Integração contínua"
 
@@ -56,13 +59,13 @@ jobs:
         with:
           context: .
           push: false
-          tags: about-me-container:ci
+          tags: ${{ env.IMAGE_NAME }}:ci
           load: true
 
       - name: "Testar o container (simulado + real)"
         run: |
           echo ">> Subindo o container para teste..."
-          docker run -d -p 8080:80 --name teste about-me-container:ci
+          docker run -d -p 8080:80 --name teste ${{ env.IMAGE_NAME }}:ci
           sleep 2
           curl -sf http://localhost:8080/about.html | grep -q "About Me" \
             && echo ">> Container respondendo corretamente" \
@@ -74,6 +77,7 @@ jobs:
   deploy:
     name: Deploy
     needs: test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - name: Baixar o código (checkout)
@@ -93,17 +97,18 @@ jobs:
         with:
           context: .
           push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/about-me-container:latest
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:latest
 
       - name: Confirmar publicação
         run: |
-          echo ">> Imagem publicada em: https://hub.docker.com/r/${{ secrets.DOCKERHUB_USERNAME }}/about-me-container"
+          echo ">> Imagem publicada em: https://hub.docker.com/r/${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}"
           echo ">> Deploy concluído."
           echo ">> Relaciona-se à teoria: Controle de mudança"
 
   release:
     name: Release
-    needs: deploy
+    needs: test
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     steps:
       - name: Baixar o código (checkout)
@@ -127,11 +132,11 @@ jobs:
         with:
           context: .
           push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/about-me-container:${{ steps.vars.outputs.tag }}
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:${{ steps.vars.outputs.tag }}
 
       - name: Confirmar release
         run: |
-          echo ">> Release publicado: ${{ secrets.DOCKERHUB_USERNAME }}/about-me-container:${{ steps.vars.outputs.tag }}"
+          echo ">> Release publicado: ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:${{ steps.vars.outputs.tag }}"
           echo "Commit: ${{ github.sha }}"
           echo ">> Release concluído: baseline entregue e rastreável."
           echo ">> Relaciona-se à teoria: Baseline entregue"
